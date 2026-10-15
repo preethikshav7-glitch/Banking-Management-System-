@@ -1,0 +1,131 @@
+# NovaBank Management System
+
+A console-based banking management system written in pure Java (no external libraries). It supports multiple account types, money transfers, an undo feature, real-time event alerts, monthly interest, and persistent storage.
+
+## Why this design is different
+
+Most student banking projects are a single class with a menu and a list of balances. NovaBank is built around a few ideas that make it closer to how real banking software works:
+
+| Feature | What it does | Pattern / concept |
+|---|---|---|
+| Polymorphic accounts | Savings and Current accounts share one interface but have different rules (overdraft, interest) | Inheritance, abstract classes |
+| Live event feed | Every account opening, large transfer, and interest run is broadcast to subscribers | Observer pattern |
+| Fraud watch | Movements at or above a threshold trigger an alert | Event-driven rules |
+| Undo last operation | Reverses the most recent deposit, withdrawal, or transfer | Stack-based compensation |
+| Atomic transfers | If the credit side fails, the debit is rolled back automatically | Compensating transaction |
+| Full statements | Every account keeps a timestamped ledger with running balances | Immutable records (Java `record`) |
+| Exact money maths | All amounts use `BigDecimal`, never `double` | Correct financial arithmetic |
+| Persistence | Accounts are saved to a CSV file and reloaded on startup | File I/O |
+
+## Project structure
+
+```
+banking-management-system/
+├── README.md
+└── BankingSystem.java
+```
+
+## Requirements
+
+- Java 17 or newer (the code uses records, switch expressions, and arrow labels)
+- Any terminal or command prompt
+
+Check your version with:
+
+```bash
+java -version
+```
+
+## How to run
+
+```bash
+# Compile
+javac BankingSystem.java
+
+# Run
+java BankingSystem
+```
+
+On the first run, the program creates `bank_data.csv` when you choose **Save & exit**. Later runs load your accounts from that file.
+
+## Menu
+
+```
+1. Open account
+2. Deposit
+3. Withdraw
+4. Transfer
+5. View account and statement
+6. Undo last operation
+7. Run month-end interest
+8. List all accounts
+9. Save and exit
+```
+
+## Sample session
+
+```
+=== Welcome to NovaBank Management System ===
+1. Open account
+...
+Choice: 1
+Type (SAVINGS/CURRENT): SAVINGS
+Holder name: Asha Menon
+Opening deposit: 10000
+  [EVENT] Account AC1001 opened for Asha Menon
+Created SAVINGS account AC1001
+
+Choice: 4
+From account: AC1001
+To account: AC1002
+Amount: 60000
+  [EVENT] [ALERT] Large movement of 60000.00 on AC1001
+```
+
+## Account rules
+
+| Account | Annual interest | Overdraft | Notes |
+|---|---|---|---|
+| SAVINGS | 4% (credited monthly) | None | Balance cannot go below zero |
+| CURRENT | None | Up to 5,000 | Can go negative within the overdraft limit |
+
+## Design overview
+
+```
+            +-----------------+
+            |      Bank       |  ---- notifies ---->  BankListener (console feed)
+            |  accounts map   |
+            |  undo stack     |
+            +--------+--------+
+                     | manages
+          +----------+-----------+
+          |                      |
+   SavingsAccount          CurrentAccount
+          \                      /
+           +------ Account -----+
+              deposit / withdraw
+              monthly interest
+              immutable ledger
+```
+
+## Ideas for extending the project
+
+- Add a login system with hashed PINs
+- Replace the CSV file with SQLite through JDBC
+- Add a Swing or JavaFX graphical interface
+- Add loan accounts with EMI calculation
+- Write JUnit tests for interest rounding and rollback behavior
+- Add an export of statements to PDF
+- Connect the fraud watch to a configurable rules file
+
+## Limitations
+
+This is a learning project. It has no authentication, no concurrency control, and the CSV file is not encrypted. Do not use it to handle real money.
+
+## Author
+
+Bhaavini Sri
+
+## License
+
+MIT
